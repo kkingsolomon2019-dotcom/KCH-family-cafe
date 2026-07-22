@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Family Cafe POS</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        @media print {
+            body * { visibility: hidden; }
+            #printModal, #printModal * { visibility: visible; }
+            #printModal { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden selection:bg-amber-100">
+
+    <!-- TOP HEADER NAVIGATION -->
+    <header class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shadow-xs no-print shrink-0">
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 bg-amber-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-sm shadow-amber-500/20">F</div>
+            <div>
+                <h1 id="headerShopName" class="font-bold text-slate-900 tracking-tight text-base leading-tight">Family Cafe</h1>
+                <span class="text-xs font-semibold text-amber-600 bg-amber-50 rounded-md px-1.5 py-0.5">POS Ultimate v3</span>
+            </div>
+        </div>
+
+        <nav class="flex items-center space-x-1">
+            <button onclick="switchTab('register')" id="tab-register" class="flex items-center space-x-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-150 bg-amber-500 text-white shadow-xs">
+                <i data-lucide="shopping-cart" class="w-4 h-4"></i><span>Register</span>
+            </button>
+            <button onclick="verifyAdminAccess('stock')" id="tab-stock" class="flex items-center space-x-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-150 text-slate-600 hover:bg-slate-100">
+                <i data-lucide="package" class="w-4 h-4 text-slate-400"></i><span>Stock Shelf</span><i data-lucide="lock" class="w-3 h-3 text-slate-400 ml-0.5"></i>
+            </button>
+            <button onclick="verifyAdminAccess('analytics')" id="tab-analytics" class="flex items-center space-x-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-150 text-slate-600 hover:bg-slate-100">
+                <i data-lucide="bar-chart-3" class="w-4 h-4 text-slate-400"></i><span>Analytics</span><i data-lucide="lock" class="w-3 h-3 text-slate-400 ml-0.5"></i>
+            </button>
+            <button onclick="verifyAdminAccess('catalog')" id="tab-catalog" class="flex items-center space-x-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-150 text-slate-600 hover:bg-slate-100">
+                <i data-lucide="folder-plus" class="w-4 h-4 text-slate-400"></i><span>Catalog</span><i data-lucide="lock" class="w-3 h-3 text-slate-400 ml-0.5"></i>
+            </button>
+            <button onclick="verifyAdminAccess('settings')" id="tab-settings" class="flex items-center space-x-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-150 text-slate-600 hover:bg-slate-100">
+                <i data-lucide="settings" class="w-4 h-4 text-slate-400"></i><span>Settings</span><i data-lucide="lock" class="w-3 h-3 text-slate-400 ml-0.5"></i>
+            </button>
+        </nav>
+
+        <div class="flex items-center space-x-3">
+            <div id="liveNetBadge" class="flex items-center space-x-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg text-xs font-semibold">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Hybrid Local</span>
+            </div>
+            <button onclick="toggleManagerLock()" id="managerLockBtn" class="flex items-center space-x-2 px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white shadow-xs hover:bg-slate-50 transition-colors">
+                <i data-lucide="unlock" class="w-3.5 h-3.5 text-emerald-500" id="lockBtnIcon"></i>
+                <span id="lockBtnText">Staff Mode</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN INTERACTIVE VIEW AREA -->
+    <main class="flex-1 overflow-hidden relative no-print">
+
+        <!-- PANEL 1: REGISTRATION TERMINAL (STAFF VIEW) -->
+        <section id="view-register" class="absolute inset-0 grid grid-cols-12 h-full opacity-100 pointer-events-auto transition-opacity duration-150">
+            <!-- Left Side: Category Slider and Items Grid -->
+            <div class="col-span-8 flex flex-col h-full bg-slate-50 border-r border-slate-200 overflow-hidden">
+                <!-- Category Horizontal Slider Bar -->
+                <div id="categorySlider" class="flex items-center space-x-2 px-6 py-3 bg-white border-b border-slate-100 overflow-x-auto scrollbar-none shrink-0">
+                    <!-- Dynamic categories injected here -->
+                </div>
+                <!-- Interactive Items Grid -->
+                <div id="productsGrid" class="flex-1 p-6 overflow-y-auto grid grid-cols-3 gap-4 content-start">
+                    <!-- Dynamic items injected here -->
+                </div>
+            </div>
+
+            <!-- Right Side: Live Order Tracking Cart Desk -->
+            <div class="col-span-4 flex flex-col h-full bg-white overflow-hidden shadow-xs">
+                <div class="p-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="shopping-bag" class="w-5 h-5 text-amber-500"></i>
+                        <h2 class="font-bold text-slate-800 text-base">Active Basket</h2>
+                    </div>
+                    <button onclick="clearCart()" class="text-xs font-medium text-slate-400 hover:text-rose-500 flex items-center space-x-1 transition-colors">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i><span>Clear All</span>
+                    </button>
+                </div>
+
+                <!-- Scrollable Order Cart Entries -->
+                <div id="cartEntries" class="flex-1 overflow-y-auto p-4 space-y-3">
+                    <!-- Dynamic items injected here -->
+                </div>
+
+                <!-- Live Payment Hub Window (SMS & Backdoor Parser) -->
+                <div class="p-4 bg-slate-50 border-t border-slate-100 shrink-0">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-slate-500 tracking-wider uppercase flex items-center space-x-1">
+                            <i data-lucide="smartphone" class="w-3.5 h-3.5 text-amber-500"></i>
+                            <span>Live Transfer Monitor</span>
+                        </span>
+                        <span class="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-sm font-mono tracking-tight">Active Listener</span>
+                    </div>
+                    <div id="liveSmsFeed" class="space-y-1.5 max-h-24 overflow-y-auto pr-1">
+                        <div class="text-[11px] text-slate-400 italic bg-white border border-slate-200/60 rounded-lg p-2 text-center">
+                            Waiting for incoming Telebirr/CBE text confirmations...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ledger Computations Box -->
+                <div class="p-4 border-t border-slate-200 bg-white space-y-2.5 shrink-0 shadow-lg shadow-slate-100/40">
+                    <div class="flex justify-between text-sm text-slate-500">
+                        <span>Subtotal</span>
+                        <span id="summarySubtotal" class="font-medium text-slate-800">0.00 Br</span>
+                    </div>
+                    <div class="flex justify-between text-sm text-slate-500">
+                        <span id="lblTax">Tax (0%)</span>
+                        <span id="summaryTax" class="font-medium text-slate-800">0.00 Br</span>
+                    </div>
+                    <div class="flex justify-between text-sm text-slate-500">
+                        <span id="lblService">Service Charge (0%)</span>
+                        <span id="summaryService" class="font-medium text-slate-800">0.00 Br</span>
+                    </div>
+                    <div class="pt-2 border-t border-dashed border-slate-200 flex justify-between items-baseline">
+                        <span class="text-base font-bold text-slate-900">Total Due</span>
+                        <span id="summaryTotal" class="text-2xl font-black text-amber-600 tracking-tight">0.00 Br</span>
+                    </div>
+                    <button onclick="processCheckout()" class="w-full bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-white font-bold py-3 px-4 rounded-xl shadow-md shadow-amber-500/10 transition-all flex items-center justify-center space-x-2 mt-2 cursor-pointer">
+                        <i data-lucide="printer" class="w-5 h-5"></i>
+                        <span>Process & Print Slip</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- PANEL 2: STORAGE / LOCKED STOCK SHELF -->
+        <section id="view-stock" class="absolute inset-0 p-6 bg-slate-50 overflow-y-auto opacity-0 pointer-events-none transition-opacity duration-150">
+            <div class="max-w-5xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-white">
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-lg">Anti-Theft Inventory Ledger</h3>
+                        <p class="text-xs text-slate-500">Compare calculated balances against physical shelf counts at shifts end.</p>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50/70 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                <th class="p-4">Product Specifications</th>
+                                <th class="p-4">Main Category</th>
+                                <th class="p-4 text-center">Starting Entry</th>
+                                <th class="p-4 text-center text-rose-600 bg-rose-50/40">Units Sold</th>
+                                <th class="p-4 text-center font-bold text-emerald-700 bg-emerald-50/40">Expected In-Stock</th>
+                                <th class="p-4 text-center">Action Adjust</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stockTableBody" class="divide-y divide-slate-100 text-sm text-slate-700">
+                            <!-- Dynamic Stock Data Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- PANEL 3: SALES RECORDS & METRICS ANALYSIS -->
+        <section id="view-analytics" class="absolute inset-0 p-6 bg-slate-50 overflow-y-auto opacity-0 pointer-events-none transition-opacity duration-150">
+            <div class="max-w-5xl mx-auto space-y-6">
+                <!-- Top Executive Summary Cards -->
+                <div class="grid grid-cols-3 gap-5">
+                    <div class="bg-white p-5 border border-slate-200 rounded-2xl shadow-xs flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-500"><i data-lucide="coins" class="w-6 h-6"></i></div>
+                        <div>
+                            <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Sales Revenue</span>
+                            <h4 id="statRevenue" class="text-2xl font-black text-slate-900 tracking-tight mt-0.5">0.00 Br</h4>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 border border-slate-200 rounded-2xl shadow-xs flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center text-rose-500"><i data-lucide="receipt" class="w-6 h-6"></i></div>
+                        <div>
+                            <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Receipts Logged</span>
+                            <h4 id="statCount" class="text-2xl font-black text-slate-900 tracking-tight mt-0.5">0</h4>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 border border-slate-200 rounded-2xl shadow-xs flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-500"><i data-lucide="percent" class="w-6 h-6"></i></div>
+                        <div>
+                            <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Tax & Service Pool</span>
+                            <h4 id="statTaxPool" class="text-2xl font-black text-slate-900 tracking-tight mt-0.5">0.00 Br</h4>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transaction Log Register History Grid -->
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+                    <div class="p-5 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-900 text-base">Historical Transaction Audit Trail</h3>
+                    </div>
+                    <div class="divide-y divide-slate-100 max-h-96 overflow-y-auto" id="analyticsLogList">
+                        <!-- History logs array generated instantly -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PANEL 4: CATALOG DESIGN BUILDER -->
+        <section id="view-catalog" class="absolute inset-0 p-6 bg-slate-50 overflow-y-auto opacity-0 pointer-events-none transition-opacity duration-150">
+            <div class="max-w-5xl mx-auto grid grid-cols-12 gap-6">
+                <!-- Category Creation Engine & Item Registration Form -->
+                <div class="col-span-5 space-y-6">
+                    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                        <h3 class="font-bold text-slate-900 text-base">Add Dynamic Category Group</h3>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500 block mb-1">Category (e.g. Fast Food, Soft Drinks, Cultural)</label>
+                            <div class="flex space-x-2">
+                                <input type="text" id="txtNewCategory" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:border-amber-500" placeholder="Enter custom name...">
+                                <button onclick="saveCategory()" class="bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors cursor-pointer">Add Group</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3.5">
+                        <h3 class="font-bold text-slate-900 text-base">Register New Product Item</h3>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500 block mb-1">Product Title</label>
+                            <input type="text" id="prodName" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:border-amber-500" placeholder="e.g. Special Shiro, Beef Burger">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs font-semibold text-slate-500 block mb-1">Parent Category Bar</label>
+                                <select id="prodCategory" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:border-amber-500">
+                                    <!-- Dynamic categories dropdown -->
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold text-slate-500 block mb-1">Sales Price</label>
+                                <input type="number" id="prodPrice" step="0.01" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:border-amber-500" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500 block mb-1">Initial Starting Stock Entry</label>
+                            <input type="number" id="prodStock" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:border-amber-500" placeholder="e.g. 100">
+                        </div>
+                        <button onclick="saveProduct()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 px-4 rounded-xl transition-all mt-2 shadow-xs cursor-pointer">Inject Menu Product</button>
+                    </div>
+                </div>
+
+                <!-- Current Active Live Catalog Matrix Grid -->
+                <div class="col-span-7 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col overflow-hidden h-[540px]">
+                    <div class="p-4 border-b border-slate-100 bg-white">
+                        <h3 class="font-bold text-slate-900 text-base">Active Catalog Matrix Management</h3>
+                    </div>
+                    <div id="catalogManagerList" class="flex-1 divide-y divide-slate-100 overflow-y-auto p-2">
+                        <!-- Dynamic editable catalog listings -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PANEL 5: SYSTEM TERMINAL CONFIGURATION & API BACKDOORS -->
+        <section id="view-settings" class="absolute inset-0 p-6 bg-slate-50 overflow-y-auto opacity-0 pointer-events-none transition-opacity duration-150">
+            <div class="max-w-3xl mx-auto space-y-6">
+                <!-- Terminal Localization Info Form -->
+                <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+                    <h3 class="font-bold text-slate-900 text-base flex items-center space-x-2"><i data-lucide="sliders" class="w-5 h-5 text-amber-500"></i><span>Terminal Local Setup Parameters</span></h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500 block mb-1">Establishment Title Name</label>
+                            <input type="text" id="cfgShopName" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden" value="Family Cafe">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500 block mb-1">Active Currency Character</label>
+                            <input type="text" id="cfgCurrency" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden" value="Br">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500 block mb-1">VAT Rate percentage (%)</label>
+                            <input type="number" id="cfgTax" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden" value="0">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500 block mb-1">Service Charge percentage (%)</label>
+                            <input type="number" id="cfgService" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Administrative PIN Authentication Security Panel -->
+                <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+                    <h3 class="font-bold text-slate-900 text-base flex items-center space-x-2"><i data-lucide="key-round" class="w-5 h-5 text-rose-500"></i><span>Change Administrative Master PIN Code</span></h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500 block mb-1">Old Pin</label>
+                            <input type="password" id="pinOld" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden" placeholder="••••">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500 block mb-1">New PIN Code</label>
+                            <input type="password" id="pinNew" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden" placeholder="••••">
+                        </div>
+                    </div>
+                    <button onclick="updateAdminPin()" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors cursor-pointer">Modify Authentication Credentials</button>
+                </div>
+
+                <!-- Hidden Backdoor Window Terminal: Future Telebirr API Configuration -->
+                <div class="bg-slate-900 text-slate-100 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-base flex items-center space-x-2 text-amber-400">
+                            <i data-lucide="terminal" class="w-5 h-5"></i>
+                            <span>Telebirr Merchant Developer API Backdoor</span>
+                        </h3>
+                        <span class="text-[10px] font-mono font-bold tracking-widest bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-md border border-amber-500/20">READY FOR SYNC</span>
+                    </div>
+                    <p class="text-xs text-slate-400 leading-relaxed">Once Ethio Telecom issues your production keys, drop your secret credentials here. The system infrastructure contains built-in listeners to shift processing tunnels from local smartphone text listening directly to the native digital payment endpoints.</p>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Telebirr Merchant Shortcode / AppID</label>
+                            <input type="text" id="devApiId" class="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-xl px-3 py-2 text-sm font-mono focus:outline-hidden focus:border-amber-500 placeholder-slate-700" placeholder="e.g. 6005432">
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Secret Merchant API Security Key</label>
+                            <input type="password" id="devApiKey" class="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-xl px-3 py-2 text-sm font-mono focus:outline-hidden focus:border-amber-500 placeholder-slate-700" placeholder="••••••••••••••••••••••••••••••••">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex justify-between items-center">
+                    <span class="text-xs text-slate-400 font-medium">Clear system memory array resets:</span>
+                    <button onclick="factoryReset()" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold px-3 py-1.5 rounded-xl border border-rose-200/50 transition-colors cursor-pointer">Factory Reset Engine</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- AUTHENTICATION PROMPT GATE MODAL -->
+    <div id="authModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-150 no-print">
+        <div class="bg-white rounded-2xl border border-slate-200 max-w-sm w-full p-6 shadow-2xl transform scale-95 transition-transform duration-150 space-y-4">
+            <div class="text-center space-y-1">
+                <div class="w-12 h-12 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-2"><i data-lucide="shield-alert" class="w-6 h-6"></i></div>
+                <h4 class="font-bold text-slate-900 text-base">Administrative Access Pin</h4>
+                <p class="text-xs text-slate-400">This management dashboard tier is access restricted.</p>
+            </div>
+            <div>
+                <input type="password" id="authPinInput" class="w-full text-center bg-slate-50 border border-slate-200 rounded-xl py-2.5 font-mono text-xl tracking-widest focus:outline-hidden focus:border-amber-500" placeholder="••••" maxlength="4">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="closeAuthModal()" class="w-full border border-slate-200 hover:bg-slate-50 text-slate-500 font-bold py-2 text-sm rounded-xl transition-colors cursor-pointer">Cancel</button>
+                <button onclick="submitAuthModal()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 text-sm rounded-xl transition-colors cursor-pointer">Unlock System</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DUAL CHANNELS THERMAL TICKETS PRINTING MODAL CONTAINER -->
+    <div id="printModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 hidden items-center justify-center p-6 overflow-y-auto">
+        <div class="flex space-x-6 max-w-2xl w-full mx-auto my-auto no-print-container">
+            
+            <!-- Ticket Variant A: Customer Thermal Layout Receipt -->
+            <div class="w-80 bg-white border border-slate-200 p-5 shadow-xl font-mono text-xs text-slate-900 space-y-4 shrink-0 rounded-sm">
+                <div class="text-center space-y-1 border-b border-dashed border-slate-300 pb-3">
+                    <h2 id="receiptShopName" class="font-black text-sm uppercase">FAMILY CAFE</h2>
+                    <p class="text-[10px] text-slate-500">ADDIS ABABA, ETHIOPIA</p>
+                    <p id="receiptTimestamp" class="text-[9px] font-sans text-slate-400">Date: 2026-07-02 20:19</p>
+                </div>
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b border-slate-200 text-[10px] uppercase font-bold">
+                            <th class="pb-1">Item</th>
+                            <th class="pb-1 text-center">Qty</th>
+                            <th class="pb-1 text-right">Price</th>
+                        </tr>
+                    </thead>
+                    <tbody id="receiptCustomerItems" class="divide-y divide-slate-100">
+                        <!-- Items populated on call -->
+                    </tbody>
+                </table>
+                <div class="border-t border-dashed border-slate-300 pt-3 text-right space-y-1">
+                    <div class="flex justify-between"><span>Subtotal:</span><span id="rcpSubtotal">0.00 Br</span></div>
+                    <div class="flex justify-between text-[11px] text-slate-600"><span id="rcpTaxLbl">Tax (0%):</span><span id="rcpTax">0.00 Br</span></div>
+                    <div class="flex justify-between text-[11px] text-slate-600"><span id="rcpServiceLbl">Service (0%):</span><span id="rcpService">0.00 Br</span></div>
+                    <div class="flex justify-between text-sm font-black pt-1 border-t border-slate-100"><span>TOTAL DUE:</span><span id="rcpTotal">0.00 Br</span></div>
+                </div>
+                <div class="text-center pt-2 border-t border-dashed border-slate-300 space-y-2">
+                    <p class="text-[10px] font-bold tracking-tight text-amber-600">Scan via Telebirr or CBE Birr App</p>
+                    <div class="w-28 h-28 bg-slate-100 border border-slate-200 rounded-md mx-auto flex items-center justify-center text-slate-400 text-[10px] p-2 text-center">
+                        [ Dynamic QR Matrix Hook ]
+                    </div>
+                    <p class="text-[9px] text-slate-400 italic">"Thank you for visiting! We are family!"</p>
+                </div>
+            </div>
+
+            <!-- Ticket Variant B: Kitchen Order Slip Operational Manifest -->
+            <div class="w-80 bg-white border-2 border-slate-900 p-5 shadow-xl font-mono text-slate-950 space-y-4 shrink-0 rounded-sm">
+                <div class="text-center bg-slate-900 text-white p-2 space-y-0.5">
+                    <h2 class="text-sm font-black tracking-widest">KITCHEN SLIP</h2>
+                    <p id="kitchenOrderNum" class="text-lg font-black tracking-tight">ORDER #1024</p>
+                </div>
+                <div class="text-xs space-y-1 border-b border-slate-200 pb-2">
+                    <p id="kitchenTimestamp">Time: 20:19:13</p>
+                    <p class="font-bold text-[11px]">Server: Terminal Alpha</p>
+                </div>
+                <div class="space-y-2.5">
+                    <p class="text-[10px] font-black uppercase text-slate-500 tracking-wider">Preparation List:</p>
+                    <ul id="receiptKitchenItems" class="space-y-2 text-sm font-bold">
+                        <!-- Quantities and descriptors maximized -->
+                    </ul>
+                </div>
+                <div class="border-t-2 border-slate-900 pt-4 text-center">
+                    <div class="flex space-x-2 no-print">
+                        <button onclick="executeNativePrint()" class="flex-1 bg-slate-900 text-white font-bold py-2 rounded-lg text-xs cursor-pointer">Print Ticket Pair</button>
+                        <button onclick="closePrintModal()" class="border border-slate-200 text-slate-400 font-bold px-3 py-2 rounded-lg text-xs hover:bg-slate-50 cursor-pointer">Close</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- CORE SYSTEM APPLICATION SCRIPT ENGINE -->
+    <script>
+        // CENTRAL PERSISTENT DATA LAYER STATE
+        let categories = JSON.parse(localStorage.getItem('pos_categories')) || ["All Items", "Soft Drinks", "Fast Food", "Cultural Food", "Cakes & Desserts"];
+        let menuItems = JSON.parse(localStorage.getItem('pos_menuItems')) || [
+            { id: 1, name: "Coca-Cola", category: "Soft Drinks", price: 35.00, initialStock: 100, soldCount: 0 },
+            { id: 2, name: "Special Shiro Wat", category: "Cultural Food", price: 180.00, initialStock: 40, soldCount: 0 },
+            { id: 3, name: "Classic Beef Burger", category: "Fast Food", price: 250.00, initialStock: 25, soldCount: 0 }
+        ];
+        let cart = [];
+        let salesHistory = JSON.parse(localStorage.getItem('pos_salesHistory')) || [];
+        let activeCategory = "All Items";
+        
+        let config = JSON.parse(localStorage.getItem('pos_config')) || {
+            shopName: "Family Cafe",
+            currency: "Br",
+            taxRate: 0,
+            serviceRate: 0,
+            adminPin: "1234",
+            apiId: "",
+            apiKey: ""
+        };
+
+        let isManagerUnlocked = false;
+        let selectedTargetTab = 'register';
+
+        // ANDROID NOTIFICATION SMS SIMULATION DISPATCH ENGINE (AUTOMATION MOCK)
+        const mockSmsLogs = [
+            "Telebirr Transfer Received: 250.00 Br from Abebe Kebede.",
+            "CBE Birr: Received 180.00 Br on Ref: FT261849X.",
+            "Telebirr Transfer Received: 35.00 Br from Chala Chaltu."
+        ];
+        
+        function pushMockSmsFeed() {
+            const feed = document.getElementById('liveSmsFeed');
+            if(salesHistory.length > 0 && Math.random() > 0.4) {
+                const randomSms = mockSmsLogs[Math.floor(Math.random() * mockSmsLogs.length)];
+                const time = new Date().toLocaleTimeString();
+                const node = document.createElement('div');
+                node.className = "text-[11px] font-mono p-1.5 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-800 animate-fade-in flex flex-col";
+                node.innerHTML = `<span class="font-bold text-[9px] text-emerald-600">[SMS RECEIVED ${time}]</span><span>${randomSms}</span>`;
+                if(feed.firstElementChild && feed.firstElementChild.className.includes('italic')) {
+                    feed.innerHTML = '';
+                }
+                feed.insertBefore(node, feed.firstChild);
+            }
+        }
+        setInterval(pushMockSmsFeed, 9000);
+
+        // INITIALIZATION APPARATUS
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            syncConfigUI();
+            renderCategorySlider();
+            renderProductsGrid();
+            renderStockShelf();
+            renderAnalytics();
+            renderCatalogManager();
+            setupHistoryEngine();
+        });
+
+        // HARDWARE UNIVERSAL BACK BUTTON VIRTUAL BLOCK CODES
+        function setupHistoryEngine() {
+            window.history.pushState({ view: 'register' }, 'Register', '#register');
+            window.addEventListener('popstate', (event) => {
+                if (event.state && event.state.view) {
+                    switchTab(event.state.view, true);
+                } else {
+                    switchTab('register', true);
+                }
+            });
+        }
+
+        function switchTab(tabId, isBackAction = false) {
+            document.querySelectorAll('main > section').forEach(view => {
+                view.classList.add('opacity-0', 'pointer-events-none');
+            });
+            document.getElementById(`view-${tabId}`).classList.remove('opacity-0', 'pointer-events-none');
+            
+            document.querySelectorAll('nav > button').forEach(btn => {
+                btn.className = "flex items-center space-x-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-150 text-slate-600 hover:bg-slate-100";
+            });
+            
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if(activeBtn) {
+                activeBtn.className = "flex items-center space-x-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-150 bg-amber-500 text-white shadow-xs";
+            }
+
+            if (!isBackAction) {
+                window.history.pushState({ view: tabId }, tabId, `#${tabId}`);
+            }
+        }
+
+        // ACCESS CONTROL VALIDATOR SECURITY MATRICES
+        function verifyAdminAccess(targetTab) {
+            if (isManagerUnlocked) {
+                switchTab(targetTab);
+            } else {
+                selectedTargetTab = targetTab;
+                openAuthModal();
+            }
+        }
+
+        function openAuthModal() {
+            const modal = document.getElementById('authModal');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.remove('scale-95');
+            document.getElementById('authPinInput').value = '';
+            document.getElementById('authPinInput').focus();
+        }
+
+        function closeAuthModal() {
+            const modal = document.getElementById('authModal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.add('scale-95');
+        }
+
+        function submitAuthModal() {
+            const input = document.getElementById('authPinInput').value;
+            if (input === config.adminPin) {
+                isManagerUnlocked = true;
+                updateLockBadgeUI();
+                closeAuthModal();
+                switchTab(selectedTargetTab);
+            } else {
+                alert("Invalid Management Code PIN Security Shield Alert.");
+                document.getElementById('authPinInput').value = '';
+            }
+        }
+
+        function toggleManagerLock() {
+            if (isManagerUnlocked) {
+                isManagerUnlocked = false;
+                updateLockBadgeUI();
+                switchTab('register');
+            } else {
+                selectedTargetTab = 'register';
+                openAuthModal();
+            }
+        }
+
+        function updateLockBadgeUI() {
+            const icon = document.getElementById('lockBtnIcon');
+            const text = document.getElementById('lockBtnText');
+            if (isManagerUnlocked) {
+                icon.setAttribute('data-lucide', 'lock');
+                icon.className = "w-3.5 h-3.5 text-rose-500";
+                text.innerText = "Manager Open";
+            } else {
+                icon.setAttribute('data-lucide', 'unlock');
+                icon.className = "w-3.5 h-3.5 text-emerald-500";
+                text.innerText = "Staff Mode";
+            }
+            lucide.createIcons();
+        }
+
+        // DESIGN INTERFACES RENDERING ENGINES
+        function syncConfigUI() {
+            document.getElementById('headerShopName').innerText = config.shopName;
+            document.getElementById('cfgShopName').value = config.shopName;
+            document.getElementById('cfgCurrency').value = config.currency;
+            document.getElementById('cfgTax').value = config.taxRate;
+            document.getElementById('cfgService').value = config.serviceRate;
+            document.getElementById('devApiId').value = config.apiId;
+            document.getElementById('devApiKey').value = config.apiKey;
+            calculateCartTotals();
+        }
+
+        function renderCategorySlider() {
+            const container = document.getElementById('categorySlider');
+            container.innerHTML = categories.map(cat => {
+                const isActive = activeCategory === cat;
+                return `<button onclick="setCategoryFilter('${cat}')" class="px-4 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${isActive ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${cat}</button>`;
+            }).join('');
+        }
+
+        function setCategoryFilter(cat) {
+            activeCategory = cat;
+            renderCategorySlider();
+            renderProductsGrid();
+        }
+
+        function renderProductsGrid() {
+            const grid = document.getElementById('productsGrid');
+            const filtered = menuItems.filter(item => activeCategory === "All Items" || item.category === activeCategory);
+            
+            if(filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-3 text-center py-12 text-sm text-slate-400 font-medium">No menu stock items registered under this category bar yet.</div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(item => {
+                const liveStock = item.initialStock - item.soldCount;
+                const isOut = liveStock <= 0;
+                return `
+                    <button onclick="${isOut ? '' : `addToCart(${item.id})`}" class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between text-left shadow-xs transition-all duration-150 ${isOut ? 'opacity-50 cursor-not-allowed' : 'hover:border-amber-300 hover:shadow-md cursor-pointer active:scale-[0.98]'}" ${isOut ? 'disabled' : ''}>
+                        <div class="space-y-1">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${item.category}</span>
+                            <h4 class="font-bold text-slate-800 text-sm tracking-tight leading-tight">${item.name}</h4>
+                        </div>
+                        <div class="flex items-baseline justify-between mt-4">
+                            <span class="text-base font-black text-slate-900">${item.price.toFixed(2)} <span class="text-xs font-semibold">${config.currency}</span></span>
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-sm ${liveStock <= 5 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}">Stock: ${liveStock}</span>
+                        </div>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        // BASKET LOGIC MATRICES
+        function addToCart(id) {
+            const product = menuItems.find(m => m.id === id);
+            const liveStock = product.initialStock - product.soldCount;
+            const existing = cart.find(c => c.id === id);
+            
+            if (existing) {
+                if (existing.qty >= liveStock) {
+                    alert("Cannot exceed live shelf inventory counts.");
+                    return;
+                }
+                existing.qty++;
+            } else {
+                cart.push({ ...product, qty: 1 });
+            }
+            renderCart();
+        }
+
+        function modifyCartQty(id, delta) {
+            const item = cart.find(c => c.id === id);
+            const product = menuItems.find(m => m.id === id);
+            const liveStock = product.initialStock - product.soldCount;
+
+            if (item) {
+                if (delta > 0 && item.qty >= liveStock) {
+                    alert("Maximum available shelf stock reached.");
+                    return;
+                }
+                item.qty += delta;
+                if (item.qty <= 0) {
+                    cart = cart.filter(c => c.id !== id);
+                }
+                renderCart();
+            }
+        }
+
+        function clearCart() {
+            cart = [];
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cartEntries');
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-center py-16 text-slate-300 space-y-2">
+                        <i data-lucide="shopping-basket" class="w-8 h-8 stroke-[1.5]"></i>
+                        <span class="text-xs font-semibold tracking-wide">Basket is empty</span>
+                    </div>
+                `;
+                lucide.createIcons();
+                calculateCartTotals();
+                return;
+            }
+
+            container.innerHTML = cart.map(item => `
+                <div class="flex items-center justify-between p-3 border border-slate-100 rounded-xl bg-slate-50/50">
+                    <div class="space-y-0.5 max-w-[60%]">
+                        <h5 class="font-bold text-slate-800 text-xs truncate">${item.name}</h5>
+                        <span class="text-xs font-black text-amber-600">${(item.price * item.qty).toFixed(2)} ${config.currency}</span>
+                    </div>
+                    <div class="flex items-center space-x-2 bg-white border border-slate-200 rounded-lg p-1 shadow-xs">
+                        <button onclick="modifyCartQty(${item.id}, -1)" class="w-5 h-5 flex items-center justify-center rounded-md hover:bg-slate-100 text-slate-500 font-bold text-xs">-</button>
+                        <span class="text-xs font-mono font-bold w-5 text-center text-slate-800">${item.qty}</span>
+                        <button onclick="modifyCartQty(${item.id}, 1)" class="w-5 h-5 flex items-center justify-center rounded-md hover:bg-slate-100 text-slate-500 font-bold text-xs">+</button>
+                    </div>
+                </div>
+            `).join('');
+            calculateCartTotals();
+        }
+
+        function calculateCartTotals() {
+            const subtotal = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
+            const tax = subtotal * (config.taxRate / 100);
+            const service = subtotal * (config.serviceRate / 100);
+            const total = subtotal + tax + service;
+
+            document.getElementById('summarySubtotal').innerText = `${subtotal.toFixed(2)} ${config.currency}`;
+            document.getElementById('lblTax').innerText = `Tax (${config.taxRate}%)`;
+            document.getElementById('summaryTax').innerText = `${tax.toFixed(2)} ${config.currency}`;
+            document.getElementById('lblService').innerText = `Service Charge (${config.serviceRate}%)`;
+            document.getElementById('summaryService').innerText = `${service.toFixed(2)} ${config.currency}`;
+            document.getElementById('summaryTotal').innerText = `${total.toFixed(2)} ${config.currency}`;
+        }
+
+        // CHECKOUT & DOUBLE DUAL TICKET SYSTEMS
+        function processCheckout() {
+            if (cart.length === 0) {
+                alert("Add items into the basket blueprint before printing tickets.");
+                return;
+            }
+
+            // Deduct stock levels securely
+            cart.forEach(cartItem => {
+                const target = menuItems.find(m => m.id === cartItem.id);
+                if (target) {
+                    target.soldCount += cartItem.qty;
+                }
+            });
+            localStorage.setItem('pos_menuItems', JSON.stringify(menuItems));
+
+            // Append into ledger databases
+            const subtotal = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
+            const tax = subtotal * (config.taxRate / 100);
+            const service = subtotal * (config.serviceRate / 100);
+            const total = subtotal + tax + service;
+            
+            const transactionId = "TX-" + Math.floor(100000 + Math.random() * 900000);
+            const now = new Date();
+            const timestampStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+
+            salesHistory.unshift({
+                id: transactionId,
+                timestamp: timestampStr,
+                items: [...cart],
+                subtotal: subtotal,
+                taxAndService: tax + service,
+                total: total
+            });
+            localStorage.setItem('pos_salesHistory', JSON.stringify(salesHistory));
+
+            // Load values inside print templates
+            document.getElementById('receiptShopName').innerText = config.shopName;
+            document.getElementById('receiptTimestamp').innerText = `Date: ${timestampStr}`;
+            document.getElementById('kitchenOrderNum').innerText = `ORDER #${transactionId.split('-')[1]}`;
+            document.getElementById('kitchenTimestamp').innerText = `Time: ${now.toLocaleTimeString()}`;
+
+            document.getElementById('receiptCustomerItems').innerHTML = cart.map(item => `
+                <tr class="text-[11px]">
+                    <td class="py-1">${item.name}</td>
+                    <td class="py-1 text-center">${item.qty}</td>
+                    <td class="py-1 text-right">${(item.price * item.qty).toFixed(2)}</td>
+                </tr>
+            `).join('');
+
+            document.getElementById('receiptKitchenItems').innerHTML = cart.map(item => `
+                <li class="flex justify-between items-center border-b border-slate-100 pb-1">
+                    <span>${item.name}</span>
+                    <span class="text-base font-black px-2 py-0.5 bg-slate-100 border border-slate-300 rounded-md">[ X ${item.qty} ]</span>
+                </li>
+            `).join('');
+
+            document.getElementById('rcpSubtotal').innerText = `${subtotal.toFixed(2)} ${config.currency}`;
+            document.getElementById('rcpTaxLbl').innerText = `Tax (${config.taxRate}%):`;
+            document.getElementById('rcpTax').innerText = `${tax.toFixed(2)} ${config.currency}`;
+            document.getElementById('rcpServiceLbl').innerText = `Service (${config.serviceRate}%):`;
+            document.getElementById('rcpService').innerText = `${service.toFixed(2)} ${config.currency}`;
+            document.getElementById('rcpTotal').innerText = `${total.toFixed(2)} ${config.currency}`;
+
+            // Trigger visual overlay window
+            document.getElementById('printModal').classList.remove('hidden');
+            document.getElementById('printModal').classList.add('flex');
+            
+            // Clean interface
+            cart = [];
+            renderCart();
+            renderProductsGrid();
+            renderStockShelf();
+            renderAnalytics();
+        }
+
+        function closePrintModal() {
+            document.getElementById('printModal').classList.remove('flex');
+            document.getElementById('printModal').classList.add('hidden');
+        }
+
+        function executeNativePrint() {
+            window.print();
+        }
+
+        // MANAGER DASHBOARD DATA ARCHITECTURE INJECTIONS
+        function renderStockShelf() {
+            const tbody = document.getElementById('stockTableBody');
+            tbody.innerHTML = menuItems.map(item => {
+                const remaining = item.initialStock - item.soldCount;
+                return `
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                        <td class="p-4 font-bold text-slate-900">${item.name}</td>
+                        <td class="p-4"><span class="text-xs bg-slate-100 font-semibold px-2 py-0.5 rounded-md text-slate-600">${item.category}</span></td>
+                        <td class="p-4 text-center font-mono">${item.initialStock}</td>
+                        <td class="p-4 text-center text-rose-600 bg-rose-50/20 font-bold font-mono">${item.soldCount}</td>
+                        <td class="p-4 text-center bg-emerald-50/20 font-black text-emerald-700 font-mono">${remaining}</td>
+                        <td class="p-4 text-center">
+                            <div class="flex items-center justify-center space-x-1">
+                                <button onclick="adjustStartingStock(${item.id}, -10)" class="px-1.5 py-0.5 border border-slate-200 rounded-md text-[10px] bg-white font-bold text-slate-500 hover:bg-slate-50">-10</button>
+                                <button onclick="adjustStartingStock(${item.id}, 10)" class="px-1.5 py-0.5 border border-slate-200 rounded-md text-[10px] bg-white font-bold text-slate-500 hover:bg-slate-50">+10</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function adjustStartingStock(id, val) {
+            const item = menuItems.find(m => m.id === id);
+            if(item) {
+                item.initialStock = Math.max(0, item.initialStock + val);
+                localStorage.setItem('pos_menuItems', JSON.stringify(menuItems));
+                renderStockShelf();
+                renderProductsGrid();
+            }
+        }
+
+        function renderAnalytics() {
+            const totalRev = salesHistory.reduce((acc, current) => acc + current.total, 0);
+            const totalTaxPool = salesHistory.reduce((acc, current) => acc + current.taxAndService, 0);
+
+            document.getElementById('statRevenue').innerText = `${totalRev.toFixed(2)} ${config.currency}`;
+            document.getElementById('statCount').innerText = salesHistory.length;
+            document.getElementById('statTaxPool').innerText = `${totalTaxPool.toFixed(2)} ${config.currency}`;
+
+            const list = document.getElementById('analyticsLogList');
+            if(salesHistory.length === 0) {
+                list.innerHTML = `<div class="p-8 text-center text-xs text-slate-400 italic">No transaction entries captured inside current memory loops.</div>`;
+                return;
+            }
+
+            list.innerHTML = salesHistory.map(log => `
+                <div class="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                    <div class="space-y-0.5">
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold text-slate-900 text-xs">${log.id}</span>
+                            <span class="text-[10px] text-slate-400 font-sans">${log.timestamp}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 max-w-md truncate">${log.items.map(i => `${i.name} (x${i.qty})`).join(', ')}</p>
+                    </div>
+                    <span class="font-black text-slate-900 text-sm">${log.total.toFixed(2)} ${config.currency}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderCatalogManager() {
+            // Drops category options
+            const select = document.getElementById('prodCategory');
+            select.innerHTML = categories.filter(c => c !== "All Items").map(c => `<option value="${c}">${c}</option>`).join('');
+
+            const container = document.getElementById('catalogManagerList');
+            container.innerHTML = menuItems.map(item => `
+                <div class="p-3 flex items-center justify-between hover:bg-slate-50 rounded-xl transition-colors">
+                    <div class="space-y-0.5">
+                        <h4 class="font-bold text-slate-800 text-xs">${item.name}</h4>
+                        <div class="flex items-center space-x-2 text-[10px] font-semibold text-slate-400">
+                            <span>${item.category}</span>
+                            <span>•</span>
+                            <span>Price: ${item.price.toFixed(2)} ${config.currency}</span>
+                        </div>
+                    </div>
+                    <button onclick="deleteProduct(${item.id})" class="text-slate-400 hover:text-rose-500 p-1 rounded-lg transition-colors cursor-pointer"><i data-lucide="x-circle" class="w-4 h-4"></i></button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // CATALOG MODIFIERS ENGINES
+        function saveCategory() {
+            const input = document.getElementById('txtNewCategory').value.trim();
+            if (!input) return;
+            if (categories.includes(input)) {
+                alert("Category group title string already registered.");
+                return;
+            }
+            categories.push(input);
+            localStorage.setItem('pos_categories', JSON.stringify(categories));
+            document.getElementById('txtNewCategory').value = '';
+            renderCategorySlider();
+            renderCatalogManager();
+        }
+
+        function saveProduct() {
+            const name = document.getElementById('prodName').value.trim();
+            const category = document.getElementById('prodCategory').value;
+            const price = parseFloat(document.getElementById('prodPrice').value);
+            const stock = parseInt(document.getElementById('prodStock').value) || 0;
+
+            if(!name || isNaN(price) || price <= 0) {
+                alert("Verify name and financial registration strings.");
+                return;
+            }
+
+            const newItem = {
+                id: Date.now(),
+                name: name,
+                category: category,
+                price: price,
+                initialStock: stock,
+                soldCount: 0
+            };
+
+            menuItems.push(newItem);
+            localStorage.setItem('pos_menuItems', JSON.stringify(menuItems));
+            
+            // Wipe forms
+            document.getElementById('prodName').value = '';
+            document.getElementById('prodPrice').value = '';
+            document.getElementById('prodStock').value = '';
+            
+            renderProductsGrid();
+            renderStockShelf();
+            renderCatalogManager();
+        }
+
+        function deleteProduct(id) {
+            if(confirm("Purge product catalog entry permanently?")) {
+                menuItems = menuItems.filter(m => m.id !== id);
+                localStorage.setItem('pos_menuItems', JSON.stringify(menuItems));
+                renderProductsGrid();
+                renderStockShelf();
+                renderCatalogManager();
+            }
+        }
+
+        // SETTINGS DISPATCH SAVE OPERATIONS
+        document.querySelectorAll('#view-settings input').forEach(element => {
+            element.addEventListener('change', () => {
+                config.shopName = document.getElementById('cfgShopName').value || "Family Cafe";
+                config.currency = document.getElementById('cfgCurrency').value || "Br";
+                config.taxRate = parseFloat(document.getElementById('cfgTax').value) || 0;
+                config.serviceRate = parseFloat(document.getElementById('cfgService').value) || 0;
+                config.apiId = document.getElementById('devApiId').value.trim();
+                config.apiKey = document.getElementById('devApiKey').value.trim();
+
+                localStorage.setItem('pos_config', JSON.stringify(config));
+                syncConfigUI();
+            });
+        });
+
+        function updateAdminPin() {
+            const old = document.getElementById('pinOld').value;
+            const next = document.getElementById('pinNew').value;
+
+            if(old !== config.adminPin) {
+                alert("Current configuration password pin challenge mismatches.");
+                return;
+            }
+            if(next.length !== 4 || isNaN(parseInt(next))) {
+                alert("New secret PIN configuration matrix must be exactly 4 digit integers.");
+                return;
+            }
+
+            config.adminPin = next;
+            localStorage.setItem('pos_config', JSON.stringify(config));
+            document.getElementById('pinOld').value = '';
+            document.getElementById('pinNew').value = '';
+            alert("Master administration security PIN successfully changed.");
+        }
+
+        function factoryReset() {
+            if(confirm("Confirm system wipeout? All analytics tracking logs, inventory matrices, and configurations reset.")) {
+                localStorage.clear();
+                window.location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
