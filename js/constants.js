@@ -104,7 +104,7 @@ const STORAGE_KEYS = {
 // ============================================================================
 
 const DEFAULTS = {
-  categories: ['All Items', 'Soft Drinks', 'Fast Food', 'Cultural Food', 'Cakes & Desserts'],
+  categories: ['All Items', 'Soft Drinks', 'Fast Food', 'Cultural Food', 'Cakes \& Desserts'],
   menuItems: [
     { id: 1, name: 'Coca-Cola', category: 'Soft Drinks', price: 35.0, initialStock: 100, soldCount: 0 },
     { id: 2, name: 'Special Shiro Wat', category: 'Cultural Food', price: 180.0, initialStock: 40, soldCount: 0 },
@@ -129,7 +129,7 @@ const VALIDATION = {
   pinLength: 4,
   minPrice: 0,
   maxPinAttempts: 3,
-  pinLockoutMs: 30000, // 30 seconds
+  pinLockoutMs: 30000,
   categoryNameMaxLength: 50,
   productNameMaxLength: 100,
   minStock: 0,
@@ -155,8 +155,8 @@ const MOCK_SMS_LOGS = [
   'Telebirr Transfer Received: 35.00 Br from Chala Chaltu.',
 ];
 
-const SMS_PUSH_INTERVAL = 9000; // milliseconds
-const SMS_PUSH_THRESHOLD = 0.4; // probability threshold
+const SMS_PUSH_INTERVAL = 9000;
+const SMS_PUSH_THRESHOLD = 0.4;
 
 // ============================================================================
 // ERROR MESSAGES
@@ -167,7 +167,7 @@ const ERROR_MESSAGES = {
   storageNotAvailable: 'Local storage is not available (private browsing mode?).',
   invalidPin: 'Invalid Management Code PIN Security Shield Alert.',
   pinMismatch: 'Current configuration password pin challenge mismatches.',
-  invalidPinFormat: 'New secret PIN configuration matrix must be exactly 4 digit integers.',
+  invalidPinFormat: 'New secret PIN must be exactly 4 digit integers.',
   categoryExists: 'Category group title string already registered.',
   invalidProduct: 'Verify name and financial registration strings.',
   cartEmpty: 'Add items into the basket blueprint before printing tickets.',
@@ -175,7 +175,6 @@ const ERROR_MESSAGES = {
   maxStockReached: 'Maximum available shelf stock reached.',
   confirmDelete: 'Purge product catalog entry permanently?',
   confirmFactoryReset: 'Confirm system wipeout? All analytics tracking logs, inventory matrices, and configurations reset.',
-  confirmClearCart: 'Clear all items from basket?',
 };
 
 // ============================================================================
@@ -199,23 +198,3 @@ const VIEWS = {
   catalog: 'catalog',
   settings: 'settings',
 };
-
-// ============================================================================
-// EXPORT
-// ============================================================================
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    SELECTORS,
-    STORAGE_KEYS,
-    DEFAULTS,
-    VALIDATION,
-    UI,
-    MOCK_SMS_LOGS,
-    SMS_PUSH_INTERVAL,
-    SMS_PUSH_THRESHOLD,
-    ERROR_MESSAGES,
-    TRANSACTION,
-    VIEWS,
-  };
-}

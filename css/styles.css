@@ -1,0 +1,175 @@
+/**
+ * @fileoverview Main application styles for POS system
+ * Uses Tailwind CSS for utility classes with custom additions
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+/* ========================================================================== */
+/* BASE STYLES */
+/* ========================================================================== */
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+/* ========================================================================== */
+/* SELECTION STYLES */
+/* ========================================================================== */
+
+::selection {
+  background-color: #fef08a;
+  color: #1e293b;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ========================================================================== */
+/* UTILITY CLASSES */
+/* ========================================================================== */
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.truncate-lines-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.truncate-lines-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ========================================================================== */
+/* ANIMATIONS */
+/* ========================================================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ========================================================================== */
+/* BUTTON STYLES */
+/* ========================================================================== */
+
+button {
+  cursor: pointer;
+  transition: all 150ms ease-in-out;
+}
+
+button:active {
+  transform: scale(0.99);
+}
+
+/* ========================================================================== */
+/* FORM INPUTS */
+/* ========================================================================== */
+
+input,
+select,
+textarea {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+}
+
+input[type='password'] {
+  font-family: monospace;
+  letter-spacing: 0.1em;
+}
+
+/* ========================================================================== */
+/* MODAL STYLES */
+/* ========================================================================== */
+
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+}
+
+/* ========================================================================== */
+/* RESPONSIVE UTILITIES */
+/* ========================================================================== */
+
+@media (max-width: 1024px) {
+  .grid-cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-cols-12 {
+    grid-template-columns: 1fr;
+  }
+
+  .col-span-8,
+  .col-span-4,
+  .col-span-7,
+  .col-span-5 {
+    grid-column: 1 / -1;
+  }
+
+  .grid-cols-3 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
